@@ -13,3 +13,18 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# flex, bison
+*.zip
+*.yy.c
+*.tab.*
+*.output
+*.swp
+*.j
+*.class
+*.log
+png_compiler
+.DS_Store
+tmp/
+*.Identifier
+tmp.*
