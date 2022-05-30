@@ -8,6 +8,7 @@ COMMON_HEADER := common.h
 COMPILER := png_compiler
 JAVABYTECODE := hw3.j
 EXEC := Main
+v := 0
 
 
 all: ${COMPILER}
@@ -32,8 +33,8 @@ ${EXEC}.class: ${JAVABYTECODE}
 run: ${EXEC}.class
 	@java ${EXEC} || java -Xverify:none ${EXEC}
 
-judge: all
-	@judge -v ${v}
+check: all
+	@cd tests/ && judge -v ${v} && rm -f ${EXEC}.class *.j && cd ../
 
 clean:
-	rm -f ${COMPILER} ${YAC_FILE}.tab.* ${YAC_FILE}.output lex.*
+	rm -f ${COMPILER} ${YAC_FILE}.tab.* ${YAC_FILE}.output lex.* ${EXEC}.class *.j
