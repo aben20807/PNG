@@ -27,7 +27,7 @@ ifeq (,$(wildcard ${JAVABYTECODE}))
 endif
 
 ${EXEC}.class: ${JAVABYTECODE}
-	@java -jar jasmin.jar -g ${JAVABYTECODE}
+	@java -jar 3rdparty/jasmin.jar -g ${JAVABYTECODE}
 
 run: ${EXEC}.class
 	@java ${EXEC} || java -Xverify:none ${EXEC}
