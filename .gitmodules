@@ -1,0 +1,3 @@
+[submodule "3rdparty/miniclog"]
+	path = 3rdparty/miniclog
+	url = https://github.com/aben20807/miniclog.git

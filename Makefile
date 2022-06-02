@@ -16,8 +16,8 @@ EXEC ?= Main
 
 v ?= 0
 
-# LIB := 3rdparty/threaded-logger
-OBJS := logger.o
+MINICLOG := 3rdparty/miniclog
+OBJS := miniclog.o
 deps := $(OBJS:%.o=%.o.d)
 OBJS := $(addprefix $(BUILD_DIR)/,$(OBJS))
 deps := $(addprefix $(BUILD_DIR)/,$(deps))
@@ -27,11 +27,14 @@ deps := $(addprefix $(BUILD_DIR)/,$(deps))
 
 all: $(COMPILER)
 
+$(BUILD_DIR)/miniclog.o: $(MINICLOG)/miniclog.c
+	$(CC) $(CFLAGS) -c -o $@ -MMD -MF $@.d $<
+
 $(BUILD_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ -MMD -MF $@.d $<
 
 $(COMPILER): lex.yy.c $(YAC_FILE).tab.c $(OBJS) | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -I$(MINICLOG)
 
 lex.yy.c: $(LEX_SRC) $(COMMON_HEADER)
 	flex $<
@@ -39,10 +42,10 @@ lex.yy.c: $(LEX_SRC) $(COMMON_HEADER)
 $(YAC_FILE).tab.c: $(YAC_SRC) $(COMMON_HEADER)
 	bison $(YFLAGS) $<
 
-$(OBJS): | $(BUILD_DIR) $(BUILD_DIR)/$(LIB)
+$(OBJS): | $(BUILD_DIR)
 
 $(BUILD_DIR):
-	mkdir -p $@
+	mkdir -p $@ 
 
 $(BIN_DIR):
 	mkdir -p $@
