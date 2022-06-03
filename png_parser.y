@@ -7,12 +7,18 @@
 /*	Definition section */
 %{
     #include "common.h" //Extern variables that communicate with lex
+    #include "miniclog.h"
     // #define YYDEBUG 1
     // int yydebug = 1;
 
     extern int yylineno;
     extern int yylex();
     extern FILE *yyin;
+
+    #define P_LOG(...) \
+        LOG_DEBUG(parser_logger, __VA_ARGS__)
+    #define P_LOG_ERROR(...) \
+        LOG_ERROR(parser_logger, __VA_ARGS__)
 
     int yylex_destroy ();
     void yyerror (char const *s)
@@ -116,6 +122,7 @@
     static void gen_return_statement(const type_et exptype);
 
     /* Other global variables */
+    logger_st* parser_logger = NULL;
     FILE *fout = NULL;
     bool g_has_error = false;
     int g_indent_cnt = 0;
@@ -228,7 +235,7 @@ OrExpr
     | OrExpr LOR AndExpr {
         assert_type_for_op(kLOR_OP, kB_TYPE, $1, $3);
         CODEGEN("ior\n");
-        printf("%s\n", get_op_name(kLOR_OP));
+        P_LOG("%s\n", get_op_name(kLOR_OP));
     }
 ;
 
@@ -237,7 +244,7 @@ AndExpr
     | AndExpr LAND CmpExpr {
         assert_type_for_op(kLAND_OP, kB_TYPE, $1, $3);
         CODEGEN("iand\n");
-        printf("%s\n", get_op_name(kLAND_OP));
+        P_LOG("%s\n", get_op_name(kLAND_OP));
     }
 ;
 
@@ -247,7 +254,7 @@ CmpExpr
         type_et t = check_type_equality_for_op($<op>2, $1, $3);
         $$.tc.type = kB_TYPE;
         gen_cmp_expression($<op>2, t);
-        printf("%s\n", get_op_name($<op>2));
+        P_LOG("%s\n", get_op_name($<op>2));
     }
 ;
 
@@ -266,7 +273,7 @@ AddExpr
         type_et t = check_type_equality_for_op($<op>2, $1, $3);
         $$.tc.type = t;
         CODEGEN("%s\n", get_mnemonic(t, $<op>2));
-        printf("%s\n", get_op_name($<op>2));
+        P_LOG("%s\n", get_op_name($<op>2));
     }
 
 AddSubOp
@@ -285,7 +292,7 @@ MulExpr
         }
         $$.tc.type = t;
         CODEGEN("%s\n", get_mnemonic(t, $<op>2));
-        printf("%s\n", get_op_name($<op>2));
+        P_LOG("%s\n", get_op_name($<op>2));
     }
 ;
 
@@ -300,7 +307,7 @@ UnaryExpr
     | UnaryOp UnaryExpr {
         $$ = $2;
         CODEGEN("%s\n", get_mnemonic($2.tc.type, $<op>1));
-        printf("%s\n", get_op_name($<op>1));
+        P_LOG("%s\n", get_op_name($<op>1));
     }
 ;
 
@@ -331,7 +338,7 @@ Operand
                 $$.tc.element_type = ident->element_type;
             }
             // gen_ident_expression();
-            printf("IDENT (name=%s, address=%d)\n", ident->name, ident->address);
+         P_LOG("IDENT (name=%s, address=%d)\n", ident->name, ident->address);
         } else {
             $$.tc.type = kID_TYPE;
             $$.tc.actual_type = kN_TYPE;
@@ -343,27 +350,27 @@ Operand
 
 Literal
     : INT_LIT {
-        printf("INT_LIT %d\n", $<i>$);
+        P_LOG("INT_LIT %d\n", $<i>$);
         CODEGEN("ldc %d\n", $<i>$);
         $$.tc.type = kI_TYPE;
     }
     | FLOAT_LIT {
-        printf("FLOAT_LIT %f\n", $<f>$);
+        P_LOG("FLOAT_LIT %f\n", $<f>$);
         CODEGEN("ldc %f\n", $<f>$);
         $$.tc.type = kF_TYPE;
     }
     | TRUE {
-        printf("TRUE %d\n", $<b>$);
+        P_LOG("TRUE %d\n", $<b>$);
         CODEGEN("iconst_1\n");
         $$.tc.type = kB_TYPE;
     }
     | FALSE {
-        printf("FALSE %d\n", $<b>$);
+        P_LOG("FALSE %d\n", $<b>$);
         CODEGEN("iconst_0\n");
         $$.tc.type = kB_TYPE;
     }
     | '"' STRING_LIT '"' {
-        printf("STRING_LIT %s\n", $<s>2);
+        P_LOG("STRING_LIT %s\n", $<s>2);
         CODEGEN("ldc \"%s\"\n", $<s>2);
         free($<s>2);
         $$.tc.type = kS_TYPE;
@@ -385,10 +392,10 @@ ConversionExpr
         type_et to_type = $1.tc.type;
         if (from_type == kI_TYPE && to_type == kF_TYPE) {
             CODEGEN("i2f\n");
-            printf("i2f\n");
+            P_LOG("i2f\n");
         } else if (from_type == kF_TYPE && to_type == kI_TYPE) {
             CODEGEN("f2i\n");
-            printf("f2i\n");
+            P_LOG("f2i\n");
         }
     }
 ;
@@ -402,14 +409,14 @@ PackageStmt
 ParameterList
     : IDENT Type {
         check_redeclaration($1.id_name);
-        printf("param %s, type: %s\n", $1.id_name, get_java_type($2.tc.type));
+        P_LOG("param %s, type: %s\n", $1.id_name, get_java_type($2.tc.type));
         strcat(g_cur_func_signature, get_java_type($2.tc.type));
         insert_symbol(g_cur_scope_table, $1.id_name, $2.tc);
         CODEGEN_NO_INDENT("%s", get_java_type($2.tc.type));
     }
     | ParameterList ',' IDENT Type {
         check_redeclaration($3.id_name);
-        printf("param %s, type: %s\n", $3.id_name, get_java_type($4.tc.type));
+        P_LOG("param %s, type: %s\n", $3.id_name, get_java_type($4.tc.type));
         strcat(g_cur_func_signature, get_java_type($4.tc.type));
         insert_symbol(g_cur_scope_table, $3.id_name, $4.tc);
         CODEGEN_NO_INDENT("%s", get_java_type($4.tc.type));
@@ -429,7 +436,7 @@ FunctionDeclStmt
         g_in_parameter_list = false;
         strcat(g_cur_func_signature, ")");
         strcat(g_cur_func_signature, get_java_type($6.tc.type));
-        printf("func_signature: %s\n", g_cur_func_signature);
+        P_LOG("func_signature: %s\n", g_cur_func_signature);
 
         char* func_name = $1.id_name;
         type_container_st func_tc = {kFUNC_TYPE};
@@ -460,7 +467,7 @@ FuncOpen
         $$ = $2;
         char* func_name = yylval.ctr.id_name;
         check_func_redeclaration(func_name);
-        printf("func %s\n", func_name);
+        P_LOG("func %s\n", func_name);
         CODEGEN_NO_INDENT("\n\n.method public static %s(", func_name);
     }
 ;
@@ -554,7 +561,7 @@ AssignmentStmt
             CODEGEN("%s\n", get_mnemonic(t, $<op>2));
         }
         gen_ident_store($1);
-        printf("%s\n", get_op_name($<op>2));
+        P_LOG("%s\n", get_op_name($<op>2));
     }
 ;
 
@@ -569,7 +576,7 @@ AddressableExpr
             if ($$.tc.actual_type == kA_TYPE) {
                 $$.tc.element_type = ident->element_type;
             }
-            printf("IDENT (name=%s, address=%d)\n", ident->name, ident->address);
+            P_LOG("IDENT (name=%s, address=%d)\n", ident->name, ident->address);
         } else {
             $$.tc.type = kID_TYPE;
             $$.tc.actual_type = kN_TYPE;
@@ -619,7 +626,7 @@ IncDecStmt
             CODEGEN("%s\n", get_mnemonic(gen_type, kSUB_OP));
         }
         gen_ident_store($1);
-        printf("%s\n", get_op_name($<op>2));
+        P_LOG("%s\n", get_op_name($<op>2));
     }
 ;
 
@@ -763,7 +770,7 @@ PrintStmt
             type = $3.tc.actual_type;
         }
         gen_print_statement($<op>1, type);
-        printf("%s %s\n", get_op_name($<op>1), get_type_name(type));
+        P_LOG("%s %s\n", get_op_name($<op>1), get_type_name(type));
     }
 ;
 
@@ -784,7 +791,7 @@ SwitchStmt
 
 CaseStmt
     : CASE INT_LIT {
-        printf("case %d\n", $<i>2);
+        P_LOG("case %d\n", $<i>2);
     } ':' {
         CODEGEN_NO_INDENT("L_case_%d:\n", g_case_unique_label);
     } Block {
@@ -809,14 +816,17 @@ PrintOp
 /* C code section */
 int main(int argc, char *argv[])
 {
+    parser_logger = logger_init();
+    handler_st* h = handler_init(stdout, MINICLOG_NOTSET);
+    add_handler(parser_logger, h);
+
     if (argc == 2) {
         yyin = fopen(argv[1], "r");
     } else {
         yyin = stdin;
     }
     if (!yyin) {
-        printf("file `%s` doesn't exists or cannot be opened\n", argv[1]);
-        exit(1);
+        LOG_FATAL(parser_logger, "file `%s` doesn't exists or cannot be opened\n", argv[1]);
     }
 
     /* Codegen output init */
@@ -835,7 +845,7 @@ int main(int argc, char *argv[])
     yyparse();
     dump_scope(); // global scope
 
-	printf("Total lines: %d\n", yylineno);
+ P_LOG("Total lines: %d\n", yylineno);
 
     /* Codegen end */
     fclose(fout);
@@ -845,6 +855,7 @@ int main(int argc, char *argv[])
         remove(bytecode_filename);
     }
     yylex_destroy();
+    logger_deinit(parser_logger);
     return 0;
 }
 
@@ -907,24 +918,24 @@ static entry_st *lookup_symbol(const table_st *table, const char *name)
 }
 
 static void dump_symbol(table_st *table) {
-    printf("\nScope level: %d\n", table->scope_level);
-    printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
+    P_LOG("\nScope level: %d\n", table->scope_level);
+    P_LOG("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
            "Index", "Name", "Type", "Addr", "Lineno", "Ele_type", "Func_sig");
     entry_st *cur = table->entry_head;
     while (cur != NULL) {
-        printf("%-10d%-10s%-10s%-10d%-10d",
+        P_LOG("%-10d%-10s%-10s%-10d%-10d",
             cur->index, cur->name,
             get_type_name(cur->type),
             cur->address, cur->lineno);
         if (cur->type == kA_TYPE) {
-            printf("%-10s", get_type_name(cur->element_type));
+            P_LOG("%-10s", get_type_name(cur->element_type));
         } else {
-            printf("%-10s", "-");
+            P_LOG("%-10s", "-");
         }
         if (cur->type == kFUNC_TYPE) {
-            printf("%-10s\n", cur->func_signature);
+            P_LOG("%-10s\n", cur->func_signature);
         } else {
-            printf("%-10s\n", "-");
+            P_LOG("%-10s\n", "-");
         }
         entry_st *tmp = cur;
         cur = cur->next;
@@ -932,7 +943,7 @@ static void dump_symbol(table_st *table) {
         free(tmp->func_signature);
         free(tmp);
     }
-    printf("\n");
+    P_LOG("\n");
     table_st *tmp = g_cur_scope_table;
     g_cur_scope_table = tmp->prev;
     free(tmp);
@@ -1279,7 +1290,7 @@ static void gen_return_statement(const type_et exptype)
             CODEGEN("freturn\n");
             break;
         default:
-            printf("no support `%s` for return statement yet.\n", get_type_name(exptype));
+            P_LOG("no support `%s` for return statement yet.\n", get_type_name(exptype));
             return;
     }
 }
