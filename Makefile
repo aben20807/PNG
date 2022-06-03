@@ -62,7 +62,8 @@ run: $(EXEC).class
 	@java $(EXEC) || java -Xverify:none $(EXEC)
 
 check: all
-	@cd tests/ && judge -v $(v) && rm -f $(EXEC).class *.j && cd ../
+	@cd tests/parser/ && judge -v $(v) && rm -f $(EXEC).class *.j && cd ../../
+	@cd tests/codegen/ && judge -v $(v) && rm -f $(EXEC).class *.j && cd ../../
 
 clean:
 	rm -rf $(BUILD_DIR)

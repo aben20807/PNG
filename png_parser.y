@@ -8,6 +8,7 @@
 %{
     #include "common.h" //Extern variables that communicate with lex
     #include "miniclog.h"
+    #include "list.h"
     // #define YYDEBUG 1
     // int yydebug = 1;
 
@@ -125,6 +126,7 @@
     logger_st* parser_logger = NULL;
     FILE *fout = NULL;
     bool g_has_error = false;
+    bool g_is_func_call = false;
     int g_indent_cnt = 0;
     int g_cmp_op_unique_label = 0;
     int g_case_unique_label = 0;
@@ -225,8 +227,10 @@ FuncCallExpr
     : IDENT '(' ArgumentList ')' {
         entry_st *func = check_declaration($1.id_name);
         free($1.id_name);
+        P_LOG("call: %s%s\n", func->name, func->func_signature);
         CODEGEN("invokestatic Main/");
         CODEGEN_NO_INDENT("%s%s\n", func->name, func->func_signature);
+        g_is_func_call = true;
     }
 ;
 
@@ -338,7 +342,7 @@ Operand
                 $$.tc.element_type = ident->element_type;
             }
             // gen_ident_expression();
-         P_LOG("IDENT (name=%s, address=%d)\n", ident->name, ident->address);
+            P_LOG("IDENT (name=%s, address=%d)\n", ident->name, ident->address);
         } else {
             $$.tc.type = kID_TYPE;
             $$.tc.actual_type = kN_TYPE;
@@ -402,6 +406,7 @@ ConversionExpr
 
 PackageStmt
     : PACKAGE IDENT {
+        P_LOG("package: %s\n", yylval.ctr.id_name);
         free(yylval.ctr.id_name);
     }
 ;
@@ -411,14 +416,18 @@ ParameterList
         check_redeclaration($1.id_name);
         P_LOG("param %s, type: %s\n", $1.id_name, get_java_type($2.tc.type));
         strcat(g_cur_func_signature, get_java_type($2.tc.type));
+        yylineno++;
         insert_symbol(g_cur_scope_table, $1.id_name, $2.tc);
+        yylineno--;
         CODEGEN_NO_INDENT("%s", get_java_type($2.tc.type));
     }
     | ParameterList ',' IDENT Type {
         check_redeclaration($3.id_name);
         P_LOG("param %s, type: %s\n", $3.id_name, get_java_type($4.tc.type));
         strcat(g_cur_func_signature, get_java_type($4.tc.type));
+        yylineno++;
         insert_symbol(g_cur_scope_table, $3.id_name, $4.tc);
+        yylineno--;
         CODEGEN_NO_INDENT("%s", get_java_type($4.tc.type));
     }
     | { /* no parameter */ }
@@ -467,7 +476,7 @@ FuncOpen
         $$ = $2;
         char* func_name = yylval.ctr.id_name;
         check_func_redeclaration(func_name);
-        P_LOG("func %s\n", func_name);
+        P_LOG("func: %s\n", func_name);
         CODEGEN_NO_INDENT("\n\n.method public static %s(", func_name);
     }
 ;
@@ -504,7 +513,11 @@ Statement
 ;
 
 EOL
-    : NEWLINE
+    : NEWLINE {
+        if (g_is_func_call) {
+            g_is_func_call = false;
+        }
+    }
 ;
 
 SimpleStmt
@@ -523,6 +536,7 @@ ReturnStmt
         g_has_gen_return_stmt = true;
     }
     | RETURN {
+        P_LOG("return\n");
         CODEGEN("return\n");
         g_has_gen_return_stmt = true;
     }
@@ -536,7 +550,13 @@ DeclarationStmt
     }
     | VAR IDENT Type '=' Expression {
         check_redeclaration($2.id_name);
+        if (g_is_func_call) {
+            yylineno++;
+        }
         int addr = insert_symbol(g_cur_scope_table, $2.id_name, $3.tc);
+        if (g_is_func_call) {
+            yylineno--;
+        }
         gen_decl_statement(addr, $3.tc, true);
     }
     | VAR IDENT '=' Expression {
@@ -867,6 +887,7 @@ static table_st *create_scope_symbol_table(const int scope_level, table_st *prev
     ret->variable_count = 0;
     ret->entry_head = NULL;
     ret->entry_tail = ret->entry_head;
+    P_LOG("> Create symbol table (scope level %d)\n", ret->scope_level);
     return ret;
 }
 
@@ -902,6 +923,7 @@ static int insert_symbol(table_st *table, char *name, const type_container_st tc
         table->entry_tail->next = entry;
         table->entry_tail = table->entry_tail->next;
     }
+    P_LOG("> Insert `%s` (addr: %d) to scope level %d\n", name, entry->address, table->scope_level);
     return entry->address;
 }
 
@@ -918,7 +940,7 @@ static entry_st *lookup_symbol(const table_st *table, const char *name)
 }
 
 static void dump_symbol(table_st *table) {
-    P_LOG("\nScope level: %d\n", table->scope_level);
+    P_LOG("\n> Dump symbol table (scope level: %d)\n", table->scope_level);
     P_LOG("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
            "Index", "Name", "Type", "Addr", "Lineno", "Ele_type", "Func_sig");
     entry_st *cur = table->entry_head;
@@ -976,7 +998,9 @@ static type_et check_type_equality_for_op(const op_et op, const container_st a, 
         snprintf(errmsg, sizeof(errmsg),
             "invalid operation: %s (mismatched types %s and %s)",
             get_op_name(op), get_type_name(a_type), get_type_name(b_type));
+        yylineno++;
         yyerror(errmsg);
+        yylineno--;
         g_has_error = true;
         return kN_TYPE;
     }
@@ -1024,7 +1048,9 @@ static type_et assert_type_for_condition(const type_et truth, const container_st
         snprintf(errmsg, sizeof(errmsg),
             "non-bool (type %s) used as for condition",
             get_type_name(ctr_type));
+        yylineno++;
         yyerror(errmsg);
+        yylineno--;
         g_has_error = true;
         return kN_TYPE;
     }
@@ -1044,7 +1070,9 @@ static entry_st *check_declaration(const char *name)
     char errmsg[200] = {};
     snprintf(errmsg, sizeof(errmsg),
         "undefined: %s", name);
+    yylineno++;
     yyerror(errmsg);
+    yylineno--;
     g_has_error = true;
     return NULL;
 }
@@ -1113,6 +1141,7 @@ static void gen_ident_load(const container_st ctr)
 {
     if (ctr.tc.type == kID_TYPE) {
         entry_st *ident = check_declaration(ctr.id_name);
+        // FIXME: undifined error message
         if (ident == NULL) {
             return;
         }
@@ -1284,9 +1313,11 @@ static void gen_return_statement(const type_et exptype)
     switch (exptype) {
         case kI_TYPE:
         case kB_TYPE:
+            P_LOG("ireturn\n");
             CODEGEN("ireturn\n");
             break;
         case kF_TYPE:
+            P_LOG("freturn\n");
             CODEGEN("freturn\n");
             break;
         default:
