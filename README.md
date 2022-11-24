@@ -18,11 +18,10 @@ The compiler has following features (tests/input/):
 + if condition: `in06_if.png`
 + for loop: `in07_for.png`
 + declaration without explicit type: `in17_advanced_declaration.png`
-+ simple 1D array: `in12_array.png`, `in15_advanced_array.png`, `in16_advanced_array.png`
-+ nested if condition: `in11_nested_if.png`
++ simple 1D array: `in12_array.png`, `in15_advanced_array.png`, `in16_advanced_array2.png`
 + function define and function call: `in10_function.png`
 + switch case: `in11_switch.png`
-+ nested for loop: `in13_nested_for.png`
++ nested if condition and for loop: `in13_nested_ifelse_for.png`
 + Error handle
   + type: `in08_type_error.png`
   + variable redeclaration, undefined: `in09_variable_error.png`
