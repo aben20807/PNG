@@ -136,3 +136,11 @@ in14_function_redeclare_error | ✔
 Correct/Total problems: 17/17
 Obtained/Total scores:  100/100
 ```
+
+## 3rdparty/jasmin.jar
+
+Jasmin homepage: https://jasmin.sourceforge.net/
+
+## License
+
+MIT
