@@ -1,0 +1,15 @@
+package main
+
+func main() {
+	var x [3]int32
+	var i int32 = 10
+	for i >= 0 {
+		x[i%3] += i
+		i--
+	}
+	i = 2
+	for i >= 0 {
+		println(x[i])
+		i--
+	}
+}

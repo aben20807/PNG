@@ -1,0 +1,11 @@
+package main
+
+func main() {
+	// auto type inference
+	var x = 5
+	var y = 3.14
+	var z = "Hello world"
+	println(x)
+	println(y)
+	println(z)
+}
