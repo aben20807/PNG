@@ -1,8 +1,10 @@
 # PNG's Not Go
 
-A go-like compiler modified from my college homework for fun
+Interesting go-like compiler modified from my college assignment
 
 Compile go-like language to Java bytecode and run the executable in JVM
+
+Note: Please write the homework yourself: [Build a Simple Compiler](https://aben20807.github.io/series/build-a-simple-compiler/)
 
 ## Features
 
