@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #define TYPE_TABLE \
     Y(kI_TYPE, "int32", "I") Y(kF_TYPE, "float32", "F") \

@@ -8,7 +8,6 @@
 %{
     #include "common.h" //Extern variables that communicate with lex
     #include "miniclog.h"
-    #include "list.h"
     // #define YYDEBUG 1
     // int yydebug = 1;
 
@@ -106,6 +105,7 @@
     const int kSIGNATURE_LEN = 20;
 
     /* Custom functions */
+    static int get_verbose(int argc, char *argv[]);
     static type_et check_type_equality_for_op(const op_et op, const container_st a, const container_st b);
     static type_et assert_type_for_op(const op_et op, const type_et truth, const container_st a, const container_st b);
     static type_et assert_type_for_condition(const type_et truth, const container_st ctr);
@@ -836,8 +836,14 @@ PrintOp
 /* C code section */
 int main(int argc, char *argv[])
 {
+    int verbose = get_verbose(argc, argv); // 0: no info; 1: parser info
     parser_logger = logger_init();
-    handler_st* h = handler_init(stdout, MINICLOG_NOTSET);
+    handler_st* h = NULL;
+    if (verbose == 0) {
+        h = handler_init(stdout, MINICLOG_WARN);
+    } else {
+        h = handler_init(stdout, MINICLOG_NOTSET);
+    }
     add_handler(parser_logger, h);
 
     if (argc == 2) {
@@ -865,7 +871,7 @@ int main(int argc, char *argv[])
     yyparse();
     dump_scope(); // global scope
 
- P_LOG("Total lines: %d\n", yylineno);
+    P_LOG("Total lines: %d\n", yylineno);
 
     /* Codegen end */
     fclose(fout);
@@ -877,6 +883,24 @@ int main(int argc, char *argv[])
     yylex_destroy();
     logger_deinit(parser_logger);
     return 0;
+}
+
+static int get_verbose(int argc, char *argv[])
+{
+    int verbose = 0;
+    int opt;
+    while ((opt = getopt(argc, argv, "v:")) != -1) {
+        switch (opt) {
+        case 'v':
+            verbose = atoi(optarg);
+            break;
+        default: /* '?' */
+            fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
+                    argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
+    return verbose;
 }
 
 static table_st *create_scope_symbol_table(const int scope_level, table_st *prev)
