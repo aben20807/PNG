@@ -1,0 +1,54 @@
+> Create symbol table (scope level 0)
+package: main
+func: main
+> Create symbol table (scope level 1)
+func_signature: ()V
+> Insert `main` (addr: -1) to scope level 0
+INT_LIT 3
+> Insert `x` (addr: 0) to scope level 1
+INT_LIT 10
+> Insert `i` (addr: 1) to scope level 1
+IDENT (name=i, address=1)
+INT_LIT 0
+GEQ
+> Create symbol table (scope level 2)
+IDENT (name=x, address=0)
+IDENT (name=i, address=1)
+INT_LIT 3
+REM
+IDENT (name=i, address=1)
+ADD
+IDENT (name=i, address=1)
+DEC
+
+> Dump symbol table (scope level: 2)
+Index     Name      Type      Addr      Lineno    Ele_type  Func_sig  
+
+IDENT (name=i, address=1)
+INT_LIT 2
+ASSIGN
+IDENT (name=i, address=1)
+INT_LIT 0
+GEQ
+> Create symbol table (scope level 2)
+IDENT (name=x, address=0)
+IDENT (name=i, address=1)
+PRINTLN int32
+IDENT (name=i, address=1)
+DEC
+
+> Dump symbol table (scope level: 2)
+Index     Name      Type      Addr      Lineno    Ele_type  Func_sig  
+
+
+> Dump symbol table (scope level: 1)
+Index     Name      Type      Addr      Lineno    Ele_type  Func_sig  
+0         x         array     0         4         int32     -         
+1         i         int32     1         5         -         -         
+
+
+> Dump symbol table (scope level: 0)
+Index     Name      Type      Addr      Lineno    Ele_type  Func_sig  
+0         main      func      -1        3         -         ()V       
+
+Total lines: 15

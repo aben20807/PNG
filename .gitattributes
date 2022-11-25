@@ -1,1 +1,2 @@
 *.png linguist-language=Go
+*.out linguist-language=Text

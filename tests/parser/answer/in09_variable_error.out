@@ -1,0 +1,25 @@
+> Create symbol table (scope level 0)
+package: main
+func: main
+> Create symbol table (scope level 1)
+func_signature: ()V
+> Insert `main` (addr: -1) to scope level 0
+> Insert `x` (addr: 0) to scope level 1
+> Insert `z` (addr: 1) to scope level 1
+error:7: x redeclared in this block. previous declaration at line 4
+> Insert `x` (addr: 2) to scope level 1
+error:8: undefined: y
+INT_LIT 8
+error:9: invalid operation: ASSIGN (mismatched types ERROR and int32)
+error:9: undefined: 
+ASSIGN
+INT_LIT 8
+error:8: syntax error, unexpected ADD_ASSIGN, expecting NEWLINE
+
+> Dump symbol table (scope level: 1)
+Index     Name      Type      Addr      Lineno    Ele_type  Func_sig  
+0         x         int32     0         4         -         -         
+1         z         float32   1         6         -         -         
+2         x         int32     2         7         -         -         
+
+Total lines: 8

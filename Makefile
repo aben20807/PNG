@@ -11,7 +11,7 @@ BUILD_DIR ?= build
 BIN_DIR ?= bin
 
 COMPILER ?= $(BIN_DIR)/png_compiler
-JAVABYTECODE ?= hw3.j
+JAVABYTECODE ?= main.j
 EXEC ?= Main
 
 v ?= 0
@@ -62,7 +62,9 @@ run: $(EXEC).class
 	@java $(EXEC) || java -Xverify:none $(EXEC)
 
 check: all
+	@printf "\nParser\n"
 	@cd tests/parser/ && judge -v $(v) && rm -f $(EXEC).class *.j && cd ../../
+	@printf "\nCodegen\n"
 	@cd tests/codegen/ && judge -v $(v) && rm -f $(EXEC).class *.j && cd ../../
 
 clean:

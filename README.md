@@ -30,9 +30,13 @@ The compiler has following features (tests/input/):
 ## Build & Run
 
 ```bash
+$ git clone https://github.com/aben20807/PNG.git
+$ cd PNG/
+$ git submodule update --init --recursive
+
 $ make
 $ ./bin/png_compiler < tests/input/in01_arithmetic.png
-$ java -jar 3rdparty/jasmin.jar hw3.j
+$ java -jar 3rdparty/jasmin.jar main.j
 Generated: Main.class
 $ java Main
 5
@@ -54,6 +58,8 @@ $ java Main
 
 ```bash
 $ make check
+
+Parser
 local-judge: v2.7.2
 ==============================+==================================
                        Sample | Accept
@@ -94,6 +100,8 @@ in14_function_redeclare_error | ✔
 ==============================+==================================
 Correct/Total problems: 17/17
 Obtained/Total scores:  100/100
+
+Codegen
 local-judge: v2.7.2
 ==============================+==================================
                        Sample | Accept

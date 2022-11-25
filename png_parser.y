@@ -878,9 +878,9 @@ int main(int argc, char *argv[])
     }
 
     /* Codegen output init */
-    char *bytecode_filename = "hw3.j";
+    char *bytecode_filename = "main.j";
     fout = fopen(bytecode_filename, "w");
-    CODEGEN(".source hw3.j\n");
+    CODEGEN(".source main.j\n");
     CODEGEN(".class public Main\n");
     CODEGEN(".super java/lang/Object\n");
     g_indent_cnt++;
