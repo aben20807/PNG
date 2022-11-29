@@ -144,6 +144,10 @@ Correct/Total problems: 17/17
 Obtained/Total scores:  100/100
 ```
 
+## Debug the Java bytecode
+
++ Use [jvm-verifier](https://github.com/aben20807/jvm-verifier/releases) and follow the [example](https://github.com/aben20807/jvm-verifier/tree/master/example)
+
 ## 3rdparty/jasmin.jar
 
 Jasmin homepage: https://jasmin.sourceforge.net/
